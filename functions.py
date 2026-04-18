@@ -11,7 +11,7 @@ from datetime import datetime
 def run():
     pastas_existentes = [d for d in os.listdir('.') if os.path.isdir(d) and d.startswith("Results")]
     proximo_numero = len(pastas_existentes) + 1
-    nome_final = f"Results ({proximo_numero}) {datetime.now().strftime("%d-%m-%Y")}"
+    nome_final = f"Results({proximo_numero}) {datetime.now().strftime("%d-%m-%Y")}"
     if not os.path.exists(nome_final):
         os.makedirs(nome_final)
     return nome_final
