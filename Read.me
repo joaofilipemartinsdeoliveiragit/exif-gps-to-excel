@@ -1,0 +1,34 @@
+Script técnico para automação de extração de metadados EXIF, conversão de coordenadas DMS-to-Decimal e geração de malha de prescrição(VRT) sobre ortomosaicos GeoTIFF.
+
+Dependências
+Instale os requisitos via pip:
+--------------------------------
+Bash
+pip install -r requirements.txt
+--------------------------------
+Estrutura de Módulos (functions.py)
+
+*Função*           *Parâmetros*               *Descrição*
+ run()-------------,None----------------------,Versionamento de diretórios Results [N] [Data].
+ extracaoGPS()-----,"path, save, out"---------,Parsing de tags EXIF (IFD 34853) para CSV bruto.
+ conversorDMS()----,"df, save, out"-----------,Conversão matemática e correção de hemisfério (S/W).
+ coordsGrid()------,"df, lado, save, out"-----,Agrupamento espacial e remoção de redundância (Drop Duplicates).
+ gridsortomosaico(),"lado, tif, df, save, out",Renderização GeoTIFF com sobreposição de Patches (RGB).
+
+ Fluxo de Execução (main.py)
+ 1° -> Setup: Definição de paths e inicialização do cronômetro.I/O
+ 2° -> Management: Criação da pasta de saída via run().
+ 3° -> Data Ingestion: Varredura de .JPG e extração de metadados.
+ 4° -> Geo-Processing: Cálculo de coordenadas decimais e normalização.
+ 5° -> Spatial Analysis: Geração de grids baseados na constante $0.000009 \approx 1m$.
+ 6° -> Export: Geração de mapa de prescrição em .pdf e logs em .txt.
+
+ Parâmetros de Cálculo
+O sistema utiliza o multiplicador escalar para definição de quadrantes:
+
+Lado do Quadrante: lado * 0.000009 (Conversão aproximada Metros -> Graus).
+
+Zonas:
+->Verde: Área total de cobertura.
+->Vermelho: Quadrantes com incidência detectada.
+->Amarelo: Limite externo do experimento.

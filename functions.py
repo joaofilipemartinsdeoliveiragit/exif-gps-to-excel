@@ -9,10 +9,9 @@ from datetime import datetime
 
 #Cria uma pasta nova para cada projeto
 def run():
-    data_atual = datetime.now().strftime("%d-%m-%Y")
     pastas_existentes = [d for d in os.listdir('.') if os.path.isdir(d) and d.startswith("Results")]
     proximo_numero = len(pastas_existentes) + 1
-    nome_final = f"{"Results"} {proximo_numero} {data_atual}"
+    nome_final = f"Results ({proximo_numero}) {datetime.now().strftime("%d-%m-%Y")}"
     if not os.path.exists(nome_final):
         os.makedirs(nome_final)
     return nome_final
