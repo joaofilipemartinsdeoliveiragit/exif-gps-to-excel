@@ -41,8 +41,11 @@ def extracaoGPS(Endereco: str, save: bool, nome_final: str):
 
         _ListaDeCoordenadas.append(_info)
     df_final = pd.DataFrame(_ListaDeCoordenadas)
-    caminho_completo = os.path.join(nome_final, 'GpsCords.txt')
-    if save == True: df_final.to_csv(caminho_completo, sep=',', index=False)
+
+    if save:
+        caminho_completo = os.path.join(nome_final, 'GpsCords.txt')
+        df_final.to_csv(caminho_completo, sep=',', index=False)
+
     return pd.DataFrame(_ListaDeCoordenadas)
 
 #Função de calculo utilizado na função conversorDMS
@@ -58,12 +61,14 @@ def conversorDMS(txt: int , save: bool, nome_final: str):
     txt['Longitude'] = txt['Longitude'].apply(calculo)
     txt.loc[txt['N/S'] == 'S', 'Latitude'] *= -1
     txt.loc[txt['W/E'] == 'W', 'Longitude'] *= -1
-    caminho_completo = os.path.join(nome_final, 'GpsDmsCords.txt')
-    if save == True: txt.to_csv(caminho_completo, sep=',', index=False)
+
+    if save:
+        caminho_completo = (os.path.join(nome_final, 'GpsDmsCords.txt'))
+        txt.to_csv(caminho_completo, sep=',', index=False)
     return txt
 
 #Gera as informações de grid, o ponto 0,0 de cada quadrante e apaga os quadrados repetidos
-def coordsGrid(df: int ,lado: int, save: bool, nome_final: str):
+def coordsGrid(df: int ,lado: float, save: bool, nome_final: str):
     _info = pd.DataFrame()
     _tamanhoLado = 0.000009 * lado
 
@@ -71,12 +76,29 @@ def coordsGrid(df: int ,lado: int, save: bool, nome_final: str):
     df['grid_lat'] = (df['Latitude'] / _tamanhoLado).apply(int) * _tamanhoLado # salva a equação de calcular o quadrado e aplica linha por linha e adiciona em um dicionario
     df['grid_lon'] = (df['Longitude'] / _tamanhoLado).apply(int) * _tamanhoLado #salva a equação de calcular o quadrado e aplica linha por linha e adiciona em um dicionario
     _grids= df.drop_duplicates(subset=['grid_lat', 'grid_lon']) #Apaga todas as grids repetidas
-    caminho_completo = os.path.join(nome_final, 'GpsGrids.txt')
-    if save == True: _grids.to_csv(caminho_completo, sep=',', index = False) #Salva em um csv
+
+    if save:
+        caminho_completo = os.path.join(nome_final, 'GpsGrids.txt')
+        _grids.to_csv(caminho_completo, sep=',', index = False) #Salva em um csv
     return _grids
 
+def gerarPontosCentro(df_grids: str, aresta: float, save: bool, nome_final: str):
+
+    deslocamento = (aresta / 2) * 0.000009
+    df_centros = df_grids.copy()
+    df_centros['centro_lat'] = df_centros['grid_lat'] + deslocamento
+    df_centros['centro_lon'] = df_centros['grid_lon'] + deslocamento
+    centros = ['centro_lat', 'centro_lon']
+    CentroDosQuadrantes = df_centros[centros]
+
+    if save:
+        caminho = os.path.join(nome_final, 'CentroDosQuadrantes.csv')
+        CentroDosQuadrantes.to_csv(caminho, index=False, header=False)
+
+    return CentroDosQuadrantes
+
 #aplica o desenho das grids no ortomosaico
-def gridsortomosaico(lado: int,tif: str,_grids: int, save: bool, nome_final: str):
+def gridsortomosaico(lado: float,tif: str,_grids: int, save: bool, nome_final: str):
 
     _tamanhoLado = 0.000009 * lado
 
@@ -120,6 +142,7 @@ def gridsortomosaico(lado: int,tif: str,_grids: int, save: bool, nome_final: str
         plt.title("Mapa de Prescrição sobre Ortomosaico")
         plt.xlabel("Longitude")
         plt.ylabel("Latitude")
-        caminho_completo = os.path.join(nome_final, "Prescricao_Final.pdf")
-        if save == True: plt.savefig(caminho_completo)
+        if save:
+            caminho_completo = os.path.join(nome_final, "Prescricao_Final.pdf")
+            plt.savefig(caminho_completo)
     return
