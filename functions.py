@@ -5,9 +5,20 @@ import rasterio
 from rasterio.plot import show
 import matplotlib.pyplot as plt
 import matplotlib.patches as patches
+from datetime import datetime
+
+#Cria uma pasta nova para cada projeto
+def run():
+    data_atual = datetime.now().strftime("%d-%m-%Y")
+    pastas_existentes = [d for d in os.listdir('.') if os.path.isdir(d) and d.startswith("Results")]
+    proximo_numero = len(pastas_existentes) + 1
+    nome_final = f"{"Results"} {proximo_numero} {data_atual}"
+    if not os.path.exists(nome_final):
+        os.makedirs(nome_final)
+    return nome_final
 
 #Função para extração do gps/metadados das fotos
-def extracaoGPS(Endereco: str, save: bool):
+def extracaoGPS(Endereco: str, save: bool, nome_final: str):
     _ListaDeCoordenadas = []
     _arquivoscep = [ os.path.join(Endereco, f) for f in os.listdir(Endereco)]
 
@@ -31,7 +42,8 @@ def extracaoGPS(Endereco: str, save: bool):
 
         _ListaDeCoordenadas.append(_info)
     df_final = pd.DataFrame(_ListaDeCoordenadas)
-    if save == True: df_final.to_csv('GpsCords.txt', sep=',', index=False)
+    caminho_completo = os.path.join(nome_final, 'GpsCords.txt')
+    if save == True: df_final.to_csv(caminho_completo, sep=',', index=False)
     return pd.DataFrame(_ListaDeCoordenadas)
 
 #Função de calculo utilizado na função conversorDMS
@@ -42,29 +54,31 @@ def calculo(df):
     return df
 
 #Converte as posições gps para o formato DMS
-def conversorDMS(df):
-    df['Latitude'] = df['Latitude'].apply(calculo)
-    df['Longitude'] = df['Longitude'].apply(calculo)
-    df.loc[df['N/S'] == 'S', 'Latitude'] *= -1
-    df.loc[df['W/E'] == 'W', 'Longitude'] *= -1
-    df.to_csv('GpsDmsCords.txt', sep=',', index=False)
-    return df
+def conversorDMS(txt: int , save: bool, nome_final: str):
+    txt['Latitude'] = txt['Latitude'].apply(calculo)
+    txt['Longitude'] = txt['Longitude'].apply(calculo)
+    txt.loc[txt['N/S'] == 'S', 'Latitude'] *= -1
+    txt.loc[txt['W/E'] == 'W', 'Longitude'] *= -1
+    caminho_completo = os.path.join(nome_final, 'GpsDmsCords.txt')
+    if save == True: txt.to_csv(caminho_completo, sep=',', index=False)
+    return txt
 
 #Gera as informações de grid, o ponto 0,0 de cada quadrante e apaga os quadrados repetidos
-def coordsGrid(csv: str ,lado: int):
-#Pega as coodenadas inicias ponto 0 , 0 de cada quadrado, e apaga as coordenas que estão no mesmo quadrado
+def coordsGrid(df: int ,lado: int, save: bool, nome_final: str):
     _info = pd.DataFrame()
     _tamanhoLado = 0.000009 * lado
-    df = pd.read_csv(csv) #abre o Dataframe
+
+    df  #abre o Dataframe
     df['grid_lat'] = (df['Latitude'] / _tamanhoLado).apply(int) * _tamanhoLado # salva a equação de calcular o quadrado e aplica linha por linha e adiciona em um dicionario
     df['grid_lon'] = (df['Longitude'] / _tamanhoLado).apply(int) * _tamanhoLado #salva a equação de calcular o quadrado e aplica linha por linha e adiciona em um dicionario
     _grids= df.drop_duplicates(subset=['grid_lat', 'grid_lon']) #Apaga todas as grids repetidas
-    _grids.to_csv('GpsGrids.txt', sep=',', index = False) #Salva em um csv
-    return
+    caminho_completo = os.path.join(nome_final, 'GpsGrids.txt')
+    if save == True: _grids.to_csv(caminho_completo, sep=',', index = False) #Salva em um csv
+    return _grids
 
 #aplica o desenho das grids no ortomosaico
-def gridsortomosaico(txt: str, tif: str ,lado: int):
-    _grids = pd.read_csv(txt)
+def gridsortomosaico(lado: int,tif: str,_grids: int, save: bool, nome_final: str):
+
     _tamanhoLado = 0.000009 * lado
 
     with rasterio.open(tif) as src:
@@ -107,9 +121,6 @@ def gridsortomosaico(txt: str, tif: str ,lado: int):
         plt.title("Mapa de Prescrição sobre Ortomosaico")
         plt.xlabel("Longitude")
         plt.ylabel("Latitude")
-        plt.savefig("Mapa de Prescrição sobre Ortomosaico", dpi=300, bbox_inches='tight')
-        plt.savefig("Prescricao_Final.pdf")
-        plt.show()
+        caminho_completo = os.path.join(nome_final, "Prescricao_Final.pdf")
+        if save == True: plt.savefig(caminho_completo)
     return
-
-
